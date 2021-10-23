@@ -16,11 +16,37 @@ pygame.display.set_caption("Earth Defender")
 pygame.display.set_icon(spaceship)
 clock = pygame.time.Clock()
 
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = spaceship
+        self.rect = self.image.get_rect(center = (600,350))
+        self.dx = 0
+        self.dy = 0
+
+    def update(self):
+        self.rect.x += self.dx
+        self.rect.y += self.dy
+
+player = pygame.sprite.GroupSingle()
+player.add(Player())
+
 while True:
     for event in pygame.event.get(): 
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_a: player.sprite.dx = -4
+            elif event.key == pygame.K_d: player.sprite.dx = 4
+            elif event.key == pygame.K_s: player.sprite.dy = 4
+            elif event.key == pygame.K_w: player.sprite.dy = -4
+            #elif event.key == pygame.K_SPACE and shot == False: fire(laser,player.x+29.5,player.y+10)
+        if event.type == pygame.KEYUP:
+            if( event.key == pygame.K_a or event.key == pygame.K_d) : player.sprite.dx = 0
+            elif ( event.key == pygame.K_s or event.key == pygame.K_w) : player.sprite.dy = 0
     screen.blit(background,(0,0))
+    player.update()
+    player.draw(screen)
     pygame.display.update()
     clock.tick(60)
