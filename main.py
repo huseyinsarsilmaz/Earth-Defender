@@ -1,6 +1,7 @@
 import pygame
 from pygame import mixer
 from sys import exit
+import random
 
 pygame.init()
 screen = pygame.display.set_mode((1200,700))
@@ -49,6 +50,16 @@ class Laser(pygame.sprite.Sprite):
         self.rect.y += self.dy
         if(self.rect.y < 0) : self.shot = False
 
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = ufo
+        self.pos = [random.randint(0,1100),0]
+        self.rect = self.image.get_rect(midbottom = self.pos)
+        self.dy = 0.25
+    def update(self): 
+        self.pos[1] =self.pos[1] + self.dy
+        self.rect = self.image.get_rect(center = self.pos)
 
 player = pygame.sprite.GroupSingle()
 player.add(Player())
@@ -56,6 +67,9 @@ earth = pygame.sprite.GroupSingle()
 earth.add(Earth())
 laser = pygame.sprite.GroupSingle()
 laser.add(Laser())
+enemy = pygame.sprite.Group()
+enemy_timer = pygame.USEREVENT + 1
+pygame.time.set_timer(enemy_timer,7500)
 
 while True:
     for event in pygame.event.get(): 
@@ -74,6 +88,8 @@ while True:
         if event.type == pygame.KEYUP:
             if( event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT) : player.sprite.dx = 0
             elif ( event.key == pygame.K_DOWN or event.key == pygame.K_UP) : player.sprite.dy = 0
+        if event.type == enemy_timer:
+            enemy.add(Enemy())
     screen.blit(background,(0,0))
     earth.draw(screen)
     player.update()
@@ -81,5 +97,7 @@ while True:
     if(laser.sprite.shot  == True):
         laser.update()
         laser.draw(screen)
+    enemy.update()
+    enemy.draw(screen)
     pygame.display.update()
     clock.tick(60)
