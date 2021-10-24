@@ -16,6 +16,7 @@ ufo = pygame.image.load("image/ufo.png").convert_alpha()
 bomb = pygame.image.load("image/bomb.png").convert_alpha()
 beam = pygame.image.load("image/laser.png").convert_alpha()
 flame = pygame.image.load("image/flame.png").convert_alpha()
+turbo = pygame.image.load("image/turbo.png").convert_alpha()
 mixer.music.load("audio/music.mp3")
 laser_sound = mixer.Sound("audio/laser.mp3")
 #mixer.music.play(loops = -1)
@@ -101,17 +102,20 @@ class Fire(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.pos = [0,0]
         self.angle = 0
+        self.turbo = False
         self.playerx = 0
         self.playery = 0
     
     def update(self): 
-        self.image = pygame.transform.rotozoom(flame,-self.angle,1)
+        if(self.turbo == False) : self.image = pygame.transform.rotozoom(flame,-self.angle,1)
+        else : self.image = pygame.transform.rotozoom(turbo,-self.angle,1)
         self.pos[0] = self.playerx - math.sin(math.radians(self.angle))*40
         self.pos[1] = self.playery + math.cos(math.radians(self.angle))*40
         self.rect = self.image.get_rect(center = self.pos)
 
 player = pygame.sprite.GroupSingle()
 player.add(Player())
+player_speed = 4
 earth = pygame.sprite.GroupSingle()
 earth.add(Earth())
 laser = pygame.sprite.GroupSingle()
@@ -150,6 +154,7 @@ while True:
                 laser.sprite.angle = player.sprite.angle
                 laser.sprite.dx = 15*math.sin(math.radians(laser.sprite.angle))
                 laser.sprite.dy = -15*math.cos(math.radians(laser.sprite.angle))
+            elif event.key == pygame.K_LSHIFT : player_speed = 10
         if event.type == pygame.KEYUP:
             if( event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT) : player.sprite.dangle = 0
             elif ( event.key == pygame.K_UP): 
@@ -163,6 +168,7 @@ while True:
                 player.sprite.dangle = 0
                 player.sprite.dx = 0
                 player.sprite.dy = 0
+            elif event.key == pygame.K_LSHIFT : player_speed = 4
         if event.type == enemy_timer:
             for i in range(len(enemy_list)):
                 if enemy_list[i] == False : break
@@ -179,8 +185,8 @@ while True:
     screen.blit(background,(0,0))
     earth.draw(screen)
     if(move):
-        player.sprite.dx = 4*math.sin(math.radians(player.sprite.angle))
-        player.sprite.dy = -4*math.cos(math.radians(player.sprite.angle))
+        player.sprite.dx = player_speed*math.sin(math.radians(player.sprite.angle))
+        player.sprite.dy = -player_speed*math.cos(math.radians(player.sprite.angle))
         if(reverse):
             player.sprite.dx = -player.sprite.dx
             player.sprite.dy = -player.sprite.dy
@@ -190,6 +196,8 @@ while True:
         laser.update()
         laser.draw(screen)
     if(move):
+        if(player_speed == 4) : fire.sprite.turbo = False
+        else : fire.sprite.turbo = True
         fire.sprite.angle = player.sprite.angle
         fire.sprite.playerx = player.sprite.rect.centerx
         fire.sprite.playery = player.sprite.rect.centery
