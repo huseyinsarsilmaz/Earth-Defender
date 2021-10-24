@@ -69,16 +69,31 @@ class Laser(pygame.sprite.Sprite):
         if(self.rect.y < 0 or self.rect.y > 700 or self.rect.x < 0 or self.rect.x > 1200) : self.shot = False
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self,index):
         super().__init__()
         self.image = ufo
+        self.counter = 0
         self.pos = [random.randint(0,1100),0]
         self.rect = self.image.get_rect(midbottom = self.pos)
-        self.dx = 0
-        self.dy = 0.25
+        self.dangle = (-70 + 10*index)/100
+        self.angle = 0
+        if( (-70 + 10*index) < 0) : self.dx = ((600 - abs(math.sin(math.radians(-70 + 10*index))*500)) - self.pos[0])/100
+        elif((-70 + 10*index) == 0) : self.dx = (600-self.pos[0])/100
+        else: self.dx = ((600 + math.sin(math.radians(-70 + 10*index))*500) - self.pos[0])/100
+        self.dy = (200 + (500 - (abs(math.cos(math.radians((-70 + 10*index)))*500))))/100
+        self.index = index
     def update(self): 
-        self.pos[1] =self.pos[1] + self.dy
-        self.rect = self.image.get_rect(center = self.pos)
+        self.image = pygame.transform.rotozoom(ufo,-self.angle,1)
+        if(self.counter <= 100):
+            self.angle = self.angle + self.dangle
+            self.pos[1] =self.pos[1] + self.dy
+            self.pos[0] =self.pos[0] + self.dx
+            self.counter = self.counter +1
+        self.rect = self.image.get_rect(midbottom = self.pos)
+        if(self.dangle == 0): 
+            print(self.counter)
+            print(self.pos[1])
+            print(self.dy)
 
 player = pygame.sprite.GroupSingle()
 player.add(Player())
@@ -88,7 +103,12 @@ laser = pygame.sprite.GroupSingle()
 laser.add(Laser())
 enemy = pygame.sprite.Group()
 enemy_timer = pygame.USEREVENT + 1
-pygame.time.set_timer(enemy_timer,3000)
+enemy_list = []
+enemy_positions = []
+for i in range(15) : enemy_list.append(False)
+maximum = False
+
+pygame.time.set_timer(enemy_timer,1000)
 move = False
 reverse = False
 
@@ -125,8 +145,18 @@ while True:
                 player.sprite.dx = 0
                 player.sprite.dy = 0
         if event.type == enemy_timer:
-            newEnemy = Enemy()
-            enemy.add(newEnemy)
+            for i in range(len(enemy_list)):
+                if enemy_list[i] == False : break
+                elif( i == len(enemy_list)-1): maximum = True
+            if( maximum == False):
+                while True:
+                    index = random.randint(0,14)
+                    if( enemy_list[index] == False):
+                        newEnemy = Enemy(index)
+                        enemy.add(newEnemy)
+                        enemy_list[index] = True
+                        break
+            
     screen.blit(background,(0,0))
     earth.draw(screen)
     if(move):
