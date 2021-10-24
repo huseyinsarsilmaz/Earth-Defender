@@ -90,10 +90,6 @@ class Enemy(pygame.sprite.Sprite):
             self.pos[0] =self.pos[0] + self.dx
             self.counter = self.counter +1
         self.rect = self.image.get_rect(midbottom = self.pos)
-        if(self.dangle == 0): 
-            print(self.counter)
-            print(self.pos[1])
-            print(self.dy)
 
 player = pygame.sprite.GroupSingle()
 player.add(Player())
@@ -127,7 +123,9 @@ while True:
             elif event.key == pygame.K_SPACE and laser.sprite.shot == False: 
                 laser.sprite.shot = True
                 laser_sound.play()
-                laser.sprite.rect = laser.sprite.image.get_rect(center = (player.sprite.rect.center))
+                laser.sprite.rect = laser.sprite.image.get_rect(
+                center = (player.sprite.rect.centerx + math.sin(math.radians(player.sprite.angle))*10,
+                player.sprite.rect.centery - math.cos(math.radians(player.sprite.angle))*15))
                 laser.sprite.angle = player.sprite.angle
                 laser.sprite.dx = 15*math.sin(math.radians(laser.sprite.angle))
                 laser.sprite.dy = -15*math.cos(math.radians(laser.sprite.angle))
