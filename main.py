@@ -15,6 +15,7 @@ planet = pygame.image.load("image/earth.png").convert_alpha()
 ufo = pygame.image.load("image/ufo.png").convert_alpha()
 bomb = pygame.image.load("image/bomb.png").convert_alpha()
 beam = pygame.image.load("image/laser.png").convert_alpha()
+flame = pygame.image.load("image/flame.png").convert_alpha()
 mixer.music.load("audio/music.mp3")
 laser_sound = mixer.Sound("audio/laser.mp3")
 #mixer.music.play(loops = -1)
@@ -73,23 +74,41 @@ class Enemy(pygame.sprite.Sprite):
         super().__init__()
         self.image = ufo
         self.counter = 0
+        self.steps = 1000
         self.pos = [random.randint(0,1100),0]
         self.rect = self.image.get_rect(midbottom = self.pos)
-        self.dangle = (-70 + 10*index)/100
+        self.dangle = (-70 + 10*index)/self.steps/2
         self.angle = 0
-        if( (-70 + 10*index) < 0) : self.dx = ((600 - abs(math.sin(math.radians(-70 + 10*index))*500)) - self.pos[0])/100
-        elif((-70 + 10*index) == 0) : self.dx = (600-self.pos[0])/100
-        else: self.dx = ((600 + math.sin(math.radians(-70 + 10*index))*500) - self.pos[0])/100
-        self.dy = (200 + (500 - (abs(math.cos(math.radians((-70 + 10*index)))*500))))/100
+        if( (-70 + 10*index) < 0) : self.dx = ((600 - abs(math.sin(math.radians(-70 + 10*index))*500)) - self.pos[0])/self.steps
+        elif((-70 + 10*index) == 0) : self.dx = (600-self.pos[0])/self.steps
+        else: self.dx = ((600 + math.sin(math.radians(-70 + 10*index))*500) - self.pos[0])/self.steps
+        self.dy = (200 + (500 - (abs(math.cos(math.radians((-70 + 10*index)))*500))))/self.steps
         self.index = index
     def update(self): 
         self.image = pygame.transform.rotozoom(ufo,-self.angle,1)
-        if(self.counter <= 100):
-            self.angle = self.angle + self.dangle
+        if(self.counter <= self.steps):
+            if(self.counter >= self.steps/2):
+                self.angle = self.angle + self.dangle
             self.pos[1] =self.pos[1] + self.dy
             self.pos[0] =self.pos[0] + self.dx
             self.counter = self.counter +1
         self.rect = self.image.get_rect(midbottom = self.pos)
+
+class Fire(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = flame
+        self.rect = self.image.get_rect()
+        self.pos = [0,0]
+        self.angle = 0
+        self.playerx = 0
+        self.playery = 0
+    
+    def update(self): 
+        self.image = pygame.transform.rotozoom(flame,-self.angle,1)
+        self.pos[0] = self.playerx - math.sin(math.radians(self.angle))*40
+        self.pos[1] = self.playery + math.cos(math.radians(self.angle))*40
+        self.rect = self.image.get_rect(center = self.pos)
 
 player = pygame.sprite.GroupSingle()
 player.add(Player())
@@ -102,6 +121,8 @@ enemy_timer = pygame.USEREVENT + 1
 enemy_list = []
 enemy_positions = []
 for i in range(15) : enemy_list.append(False)
+fire = pygame.sprite.GroupSingle()
+fire.add(Fire())
 maximum = False
 
 pygame.time.set_timer(enemy_timer,1000)
@@ -124,7 +145,7 @@ while True:
                 laser.sprite.shot = True
                 laser_sound.play()
                 laser.sprite.rect = laser.sprite.image.get_rect(
-                center = (player.sprite.rect.centerx + math.sin(math.radians(player.sprite.angle))*10,
+                center = (player.sprite.rect.centerx + math.sin(math.radians(player.sprite.angle))*15,
                 player.sprite.rect.centery - math.cos(math.radians(player.sprite.angle))*15))
                 laser.sprite.angle = player.sprite.angle
                 laser.sprite.dx = 15*math.sin(math.radians(laser.sprite.angle))
@@ -168,6 +189,12 @@ while True:
     if(laser.sprite.shot  == True):
         laser.update()
         laser.draw(screen)
+    if(move):
+        fire.sprite.angle = player.sprite.angle
+        fire.sprite.playerx = player.sprite.rect.centerx
+        fire.sprite.playery = player.sprite.rect.centery
+        fire.update()
+        fire.draw(screen)
     enemy.update()
     enemy.draw(screen)
     pygame.display.update()
