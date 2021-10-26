@@ -1,11 +1,9 @@
-from operator import truediv
 import pygame
 from pygame import mixer
 from sys import exit
 import random
 import math
-
-from pygame import rect
+import numpy
 
 pygame.init()
 screen = pygame.display.set_mode((1200,700))
@@ -13,7 +11,7 @@ background = pygame.image.load("image/background.png").convert_alpha()
 spaceship = pygame.image.load("image/spaceship.png").convert_alpha()
 planet = pygame.image.load("image/earth.png").convert_alpha()
 ufo = pygame.image.load("image/ufo.png").convert_alpha()
-bomb = pygame.image.load("image/bomb.png").convert_alpha()
+bombimg = pygame.image.load("image/bomb.png").convert_alpha()
 beam = pygame.image.load("image/laser.png").convert_alpha()
 laser_mask = pygame.mask.from_surface(beam)
 flame = pygame.image.load("image/flame.png").convert_alpha()
@@ -21,6 +19,7 @@ turbo = pygame.image.load("image/turbo.png").convert_alpha()
 mixer.music.load("audio/music.mp3")
 laser_sound = mixer.Sound("audio/laser.mp3")
 enemy_hit = mixer.Sound("audio/enemy_hit.mp3")
+bomb_drop = mixer.Sound("audio/bomb_drop.mp3")
 #mixer.music.play(loops = -1)
 pygame.display.set_caption("Earth Defender")
 pygame.display.set_icon(spaceship)
@@ -78,8 +77,10 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self,index):
         super().__init__()
         self.image = ufo
+        self.index = index
         self.counter = 0
         self.steps = 1000
+        self.bomb_time = 0
         self.pos = [random.randint(0,1100),0]
         self.rect = self.image.get_rect(midbottom = self.pos)
         self.dangle = (-70 + 10*index)/(self.steps/2)
@@ -89,8 +90,18 @@ class Enemy(pygame.sprite.Sprite):
         else: self.dx = ((600 + math.sin(math.radians(-70 + 10*index))*500) - self.pos[0])/self.steps
         self.dy = (200 + (500 - (abs(math.cos(math.radians((-70 + 10*index)))*500))))/self.steps
         self.index = index
+    
+    def fire(self): 
+        bomb_drop.play()
+        bomb.add(Bomb([self.pos[0],self.pos[1]]))
+        
+    
     def update(self): 
         self.image = pygame.transform.rotozoom(ufo,-self.angle,1)
+        self.bomb_time = self.bomb_time +1
+        if(self.bomb_time == 200):
+            self.bomb_time = 0
+            self.fire()
         if(self.counter <= self.steps):
             if(self.counter >= (self.steps/2)):
                 self.angle = self.angle + self.dangle
@@ -118,30 +129,25 @@ class Fire(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center = self.pos)
 
 class Bomb(pygame.sprite.Sprite):
-    def __init__(self,index):
+    def __init__(self,pos):
         super().__init__()
-        self.image = bomb
+        self.pos = pos
         self.counter = 0
-        self.steps = 1000
-        self.pos = [random.randint(0,1100),0]
-        self.rect = self.image.get_rect(midbottom = self.pos)
-        self.dangle = (-70 + 10*index)/self.steps/2
-        self.angle = 0
-        if( (-70 + 10*index) < 0) : self.dx = ((600 - abs(math.sin(math.radians(-70 + 10*index))*500)) - self.pos[0])/self.steps
-        elif((-70 + 10*index) == 0) : self.dx = (600-self.pos[0])/self.steps
-        else: self.dx = ((600 + math.sin(math.radians(-70 + 10*index))*500) - self.pos[0])/self.steps
-        self.dy = (200 + (500 - (abs(math.cos(math.radians((-70 + 10*index)))*500))))/self.steps
-        self.index = index
+        self.steps = 200
+        self.dx = (600 - self.pos[0] )/self.steps
+        self.dy = (700 - self.pos[1] )/self.steps
+        self.angle = math.degrees(numpy.arctan(self.dx/self.dy))
+        print(self.angle)
+        self.image = pygame.transform.rotozoom(bombimg,self.angle,0.5)
+        self.rect = self.image.get_rect(center = self.pos)
+    
     def update(self): 
-        self.image = pygame.transform.rotozoom(ufo,-self.angle,1)
         if(self.counter <= self.steps):
-            if(self.counter >= self.steps/2):
-                self.angle = self.angle + self.dangle
             self.pos[1] =self.pos[1] + self.dy
             self.pos[0] =self.pos[0] + self.dx
             self.counter = self.counter +1
-        self.rect = self.image.get_rect(midbottom = self.pos)     
-
+        self.rect = self.image.get_rect(center = self.pos)
+     
 player = pygame.sprite.GroupSingle()
 player.add(Player())
 player_speed = 4
@@ -152,15 +158,14 @@ laser.add(Laser())
 enemy = pygame.sprite.Group()
 enemy_timer = pygame.USEREVENT + 1
 enemy_list = []
-enemy_positions = []
 for i in range(15) : enemy_list.append(False)
 fire = pygame.sprite.GroupSingle()
 fire.add(Fire())
 maximum = False
-
-pygame.time.set_timer(enemy_timer,1000)
+pygame.time.set_timer(enemy_timer,3000)
 move = False
 reverse = False
+bomb = pygame.sprite.Group()
 
 while True:
     for event in pygame.event.get(): 
@@ -209,6 +214,7 @@ while True:
                     index = random.randint(0,14)
                     if( enemy_list[index] == False):
                         newEnemy = Enemy(index)
+                        pygame.time.set_timer
                         enemy.add(newEnemy)
                         enemy_list[index] = True
                         break
@@ -242,7 +248,8 @@ while True:
             enemy_list[i.index] = False
             i.kill()
             laser.sprite.rect.center = (-250,-250)
-
+    bomb.update()
+    bomb.draw(screen)
     pygame.display.update()
     clock.tick(60)
 
