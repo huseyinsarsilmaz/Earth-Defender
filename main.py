@@ -3,7 +3,6 @@ from pygame import mixer
 from sys import exit
 import random
 import math
-import numpy
 
 pygame.init()
 screen = pygame.display.set_mode((1200,700))
@@ -16,9 +15,11 @@ beam = pygame.image.load("image/laser.png").convert_alpha()
 laser_mask = pygame.mask.from_surface(beam)
 flame = pygame.image.load("image/flame.png").convert_alpha()
 turbo = pygame.image.load("image/turbo.png").convert_alpha()
+enemy_beam = pygame.image.load("image/enemy_laser.png").convert_alpha()
 mixer.music.load("audio/music.mp3")
 laser_sound = mixer.Sound("audio/laser.mp3")
 enemy_hit = mixer.Sound("audio/enemy_hit.mp3")
+laser_hit = mixer.Sound("audio/laser_hit.mp3")
 bomb_drop = mixer.Sound("audio/bomb_drop.mp3")
 #mixer.music.play(loops = -1)
 pygame.display.set_caption("Earth Defender")
@@ -82,6 +83,7 @@ class Enemy(pygame.sprite.Sprite):
         self.health = 3
         self.steps = 1000
         self.bomb_time = 0
+        self.laser_time = 0
         self.pos = [random.randint(0,1100),0]
         self.rect = self.image.get_rect(midbottom = self.pos)
         self.dangle = (-70 + 10*index)/(self.steps/2)
@@ -91,25 +93,43 @@ class Enemy(pygame.sprite.Sprite):
         else: self.dx = ((600 + math.sin(math.radians(-70 + 10*index))*500) - self.pos[0])/self.steps
         self.dy = (200 + (500 - (abs(math.cos(math.radians((-70 + 10*index)))*500))))/self.steps
         self.index = index
-    
-    def fire(self): 
+        
+    def bomber(self): 
         bomb_drop.play()
         bomb.add(Bomb([self.pos[0],self.pos[1]]))
+
+    def laserer(self):
+        laser_hit.play()
+        enemy_laser.add(Enemy_laser([self.pos[0],self.pos[1]]))
         
-    
     def update(self): 
-        self.image = pygame.transform.rotozoom(ufo,-self.angle,1)
-        self.bomb_time = self.bomb_time +1
-        if(self.bomb_time == 200):
-            self.bomb_time = 0
-            self.fire()
-        if(self.counter <= self.steps):
-            if(self.counter >= (self.steps/2)):
-                self.angle = self.angle + self.dangle
+        if( self.health < 3):
+            if(self.laser_time == 150):
+                self.laser_time = 0
+                self.laserer()
+            mx = player.sprite.rect.centerx - self.pos[0]
+            my = player.sprite.rect.centery  - self.pos[1]
+            self.angle = math.atan2(mx,my)
+            self.dx = math.sin(self.angle)
+            self.dy = math.cos(self.angle)
             self.pos[1] =self.pos[1] + self.dy
             self.pos[0] =self.pos[0] + self.dx
-            self.counter = self.counter +1
-        self.rect = self.image.get_rect(midbottom = self.pos)
+            self.rect = self.image.get_rect(midbottom = self.pos)
+            self.image = pygame.transform.rotozoom(ufo,-self.angle,1)
+            self.laser_time = self.laser_time +1
+            
+        else:
+            self.bomb_time = self.bomb_time +1
+            if(self.bomb_time == 200):
+                self.bomb_time = 0
+                self.bomber()
+            if(self.counter <= self.steps):
+                if(self.counter >= (self.steps/2)):
+                    self.angle = self.angle + self.dangle
+                self.pos[1] =self.pos[1] + self.dy
+                self.pos[0] =self.pos[0] + self.dx
+                self.counter = self.counter +1
+            self.rect = self.image.get_rect(midbottom = self.pos)
 
 class Fire(pygame.sprite.Sprite):
     def __init__(self):
@@ -137,8 +157,7 @@ class Bomb(pygame.sprite.Sprite):
         self.steps = 200
         self.dx = (600 - self.pos[0] )/self.steps
         self.dy = (700 - self.pos[1] )/self.steps
-        self.angle = math.degrees(numpy.arctan(self.dx/self.dy))
-        print(self.angle)
+        self.angle = math.degrees(math.atan2(self.dx,self.dy))
         self.image = pygame.transform.rotozoom(bombimg,self.angle,0.5)
         self.rect = self.image.get_rect(center = self.pos)
     
@@ -147,6 +166,23 @@ class Bomb(pygame.sprite.Sprite):
             self.pos[1] =self.pos[1] + self.dy
             self.pos[0] =self.pos[0] + self.dx
             self.counter = self.counter +1
+        self.rect = self.image.get_rect(center = self.pos)
+
+class Enemy_laser(pygame.sprite.Sprite):
+    def __init__(self,pos):
+        super().__init__()
+        self.pos = pos
+        mx = player.sprite.rect.centerx - self.pos[0]
+        my = player.sprite.rect.centery - self.pos[1]
+        self.angle = math.atan2(mx,my)
+        self.dx = math.sin(self.angle)
+        self.dy = math.cos(self.angle)
+        self.image = pygame.transform.rotozoom(enemy_beam,math.degrees(self.angle),1)
+        self.rect = self.image.get_rect(center = self.pos)
+    
+    def update(self): 
+        self.pos[1] =self.pos[1] + self.dy*5
+        self.pos[0] =self.pos[0] + self.dx*5
         self.rect = self.image.get_rect(center = self.pos)
      
 player = pygame.sprite.GroupSingle()
@@ -167,6 +203,7 @@ pygame.time.set_timer(enemy_timer,3000)
 move = False
 reverse = False
 bomb = pygame.sprite.Group()
+enemy_laser = pygame.sprite.Group()
 
 while True:
     for event in pygame.event.get(): 
@@ -245,14 +282,18 @@ while True:
     enemy.draw(screen)
     for i in enemy.sprites():
         if( pygame.sprite.collide_mask(laser.sprite,i)) != None:
-            enemy_hit.play()
             laser.sprite.rect.center = (-250,-250)
-            if( i.health > 1) : i.health = i.health -1
+            if( i.health > 1): 
+                
+                i.health = i.health -1
             else:
+                enemy_hit.play()
                 enemy_list[i.index] = False
                 i.kill()
     bomb.update()
     bomb.draw(screen)
+    enemy_laser.update()
+    enemy_laser.draw(screen)
     pygame.display.update()
     clock.tick(60)
 
