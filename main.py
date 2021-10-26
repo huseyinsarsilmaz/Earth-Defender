@@ -70,7 +70,9 @@ class Laser(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)
         self.rect.y += self.dy
         self.rect.x += self.dx
-        if(self.rect.y < 0 or self.rect.y > 700 or self.rect.x < 0 or self.rect.x > 1200) : self.shot = False
+        if(self.rect.y < 0 or self.rect.y > 700 or self.rect.x < 0 or self.rect.x > 1200):
+            self.shot = False
+            laser.sprite.rect.center = (-250,-250)
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self,index):
@@ -80,7 +82,7 @@ class Enemy(pygame.sprite.Sprite):
         self.steps = 1000
         self.pos = [random.randint(0,1100),0]
         self.rect = self.image.get_rect(midbottom = self.pos)
-        self.dangle = (-70 + 10*index)/self.steps/2
+        self.dangle = (-70 + 10*index)/(self.steps/2)
         self.angle = 0
         if( (-70 + 10*index) < 0) : self.dx = ((600 - abs(math.sin(math.radians(-70 + 10*index))*500)) - self.pos[0])/self.steps
         elif((-70 + 10*index) == 0) : self.dx = (600-self.pos[0])/self.steps
@@ -90,7 +92,7 @@ class Enemy(pygame.sprite.Sprite):
     def update(self): 
         self.image = pygame.transform.rotozoom(ufo,-self.angle,1)
         if(self.counter <= self.steps):
-            if(self.counter >= self.steps/2):
+            if(self.counter >= (self.steps/2)):
                 self.angle = self.angle + self.dangle
             self.pos[1] =self.pos[1] + self.dy
             self.pos[0] =self.pos[0] + self.dx
@@ -239,7 +241,7 @@ while True:
             enemy_hit.play()
             enemy_list[i.index] = False
             i.kill()
-            laser.sprite.rect.center = (-100,-100)
+            laser.sprite.rect.center = (-250,-250)
 
     pygame.display.update()
     clock.tick(60)
