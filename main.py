@@ -10,6 +10,7 @@ background = pygame.image.load("image/background.png").convert_alpha()
 spaceship = pygame.image.load("image/spaceship.png").convert_alpha()
 planet = pygame.image.load("image/earth.png").convert_alpha()
 earth_shield = pygame.image.load("image/earth_shield.png").convert_alpha()
+earth_shield_control = pygame.image.load("image/earth_shield_control.png").convert_alpha()
 ufo = pygame.image.load("image/ufo.png").convert_alpha()
 bombimg = pygame.image.load("image/bomb.png").convert_alpha()
 beam = pygame.image.load("image/laser.png").convert_alpha()
@@ -296,7 +297,7 @@ while True:
             enemy_list[i.index] = False
             i.kill()
     for i in bomb.sprites():
-        earth.sprite.image = earth_shield
+        earth.sprite.image = earth_shield_control
         if( pygame.sprite.collide_mask(earth.sprite,i) != None):
             shield_counter = 1
             i.kill()
@@ -310,6 +311,7 @@ while True:
     if( shield_counter > 0 ):
         shield_counter += 1
         if(shield_counter > 30) : shield_counter = 0
+    if(earth.sprite.image == earth_shield_control) : earth.sprite.image = earth_shield
     earth.draw(screen)
     bomb.update()
     bomb.draw(screen)
