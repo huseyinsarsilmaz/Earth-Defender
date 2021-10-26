@@ -79,6 +79,7 @@ class Enemy(pygame.sprite.Sprite):
         self.image = ufo
         self.index = index
         self.counter = 0
+        self.health = 3
         self.steps = 1000
         self.bomb_time = 0
         self.pos = [random.randint(0,1100),0]
@@ -245,9 +246,11 @@ while True:
     for i in enemy.sprites():
         if( pygame.sprite.collide_mask(laser.sprite,i)) != None:
             enemy_hit.play()
-            enemy_list[i.index] = False
-            i.kill()
             laser.sprite.rect.center = (-250,-250)
+            if( i.health > 1) : i.health = i.health -1
+            else:
+                enemy_list[i.index] = False
+                i.kill()
     bomb.update()
     bomb.draw(screen)
     pygame.display.update()
