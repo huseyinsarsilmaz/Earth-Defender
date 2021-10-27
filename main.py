@@ -14,7 +14,6 @@ earth_shield_control = pygame.image.load("image/earth_shield_control.png").conve
 ufo = pygame.image.load("image/ufo.png").convert_alpha()
 bombimg = pygame.image.load("image/bomb.png").convert_alpha()
 beam = pygame.image.load("image/laser.png").convert_alpha()
-laser_mask = pygame.mask.from_surface(beam)
 flame = pygame.image.load("image/flame.png").convert_alpha()
 turbo = pygame.image.load("image/turbo.png").convert_alpha()
 enemy_beam = pygame.image.load("image/enemy_laser.png").convert_alpha()
@@ -23,7 +22,7 @@ laser_sound = mixer.Sound("audio/laser.mp3")
 enemy_hit = mixer.Sound("audio/enemy_hit.mp3")
 laser_hit = mixer.Sound("audio/laser_hit.mp3")
 bomb_drop = mixer.Sound("audio/bomb_drop.mp3")
-#mixer.music.play(loops = -1)
+mixer.music.play(loops = -1)
 pygame.display.set_caption("Earth Defender")
 pygame.display.set_icon(spaceship)
 clock = pygame.time.Clock()
@@ -268,8 +267,6 @@ while True:
         if(reverse):
             player.sprite.dx = -player.sprite.dx
             player.sprite.dy = -player.sprite.dy
-    player.update()
-    player.draw(screen)
     if(laser.sprite.shot  == True):
         laser.update()
         laser.draw(screen)
@@ -317,6 +314,7 @@ while True:
     bomb.draw(screen)
     enemy_laser.update()
     enemy_laser.draw(screen)
+    player.update()
+    player.draw(screen)
     pygame.display.update()
     clock.tick(60)
-
