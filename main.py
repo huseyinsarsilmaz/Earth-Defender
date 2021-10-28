@@ -122,10 +122,9 @@ class Enemy(pygame.sprite.Sprite):
             self.dy = math.cos(self.angle)
             self.pos[1] =self.pos[1] + self.dy
             self.pos[0] =self.pos[0] + self.dx
-            self.rect = self.image.get_rect(midbottom = self.pos)
             self.image = pygame.transform.rotozoom(ufo,-self.angle,1)
+            self.rect = self.image.get_rect(midbottom = self.pos)
             self.laser_time = self.laser_time +1
-            
         else:
             self.bomb_time = self.bomb_time +1
             if(self.bomb_time == 200):
@@ -137,6 +136,7 @@ class Enemy(pygame.sprite.Sprite):
                 self.pos[1] =self.pos[1] + self.dy
                 self.pos[0] =self.pos[0] + self.dx
                 self.counter = self.counter +1
+            self.image = pygame.transform.rotozoom(ufo,-self.angle,1)
             self.rect = self.image.get_rect(midbottom = self.pos)
 
 class Fire(pygame.sprite.Sprite):
