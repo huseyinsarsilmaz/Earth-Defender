@@ -8,7 +8,9 @@ pygame.init()
 screen = pygame.display.set_mode((1200,700))
 background = pygame.image.load("image/background.png").convert_alpha()
 spaceship = pygame.image.load("image/spaceship.png").convert_alpha()
+player_health_icon = pygame.transform.rotozoom(spaceship,0,0.55)
 planet = pygame.image.load("image/earth.png").convert_alpha()
+earth_health_icon = pygame.transform.rotozoom(pygame.image.load("image/earth_health.png").convert_alpha(),0,0.55)
 earth_shield = pygame.image.load("image/earth_shield.png").convert_alpha()
 earth_shield_control = pygame.image.load("image/earth_shield_control.png").convert_alpha()
 ufo = pygame.image.load("image/ufo.png").convert_alpha()
@@ -32,6 +34,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self.image = spaceship
         self.rect = self.image.get_rect(center = (600,350))
+        self.health = 100
         self.angle = 0
         self.dangle = 0
         self.dx = 0
@@ -53,6 +56,7 @@ class Earth(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.image = planet
+        self.health = 250
         self.rect = self.image.get_rect(center = (600,690))
         self.shielded = earth_shield
 
@@ -290,6 +294,7 @@ while True:
                 enemy_list[i.index] = False
                 i.kill()
         if( pygame.sprite.collide_mask(player.sprite,i) != None):
+            player.sprite.health = player.sprite.health - 20
             enemy_hit.play()
             enemy_list[i.index] = False
             i.kill()
@@ -297,10 +302,12 @@ while True:
         earth.sprite.image = earth_shield_control
         if( pygame.sprite.collide_mask(earth.sprite,i) != None):
             shield_counter = 1
+            earth.sprite.health = earth.sprite.health - 25
             i.kill()
         elif(shield_counter == 0):
             earth.sprite.image = planet
         if ( pygame.sprite.collide_mask(player.sprite,i) != None):
+            player.sprite.health = player.sprite.health - 10
             i.kill()
         if ( pygame.sprite.collide_mask(laser.sprite,i) != None):
             i.kill()
@@ -309,6 +316,10 @@ while True:
         shield_counter += 1
         if(shield_counter > 30) : shield_counter = 0
     if(earth.sprite.image == earth_shield_control) : earth.sprite.image = earth_shield
+    for i in enemy_laser.sprites():
+        if( pygame.sprite.collide_mask(player.sprite,i) != None):
+            player.sprite.health = player.sprite.health - 2.5
+            i.kill()
     earth.draw(screen)
     bomb.update()
     bomb.draw(screen)
@@ -316,5 +327,9 @@ while True:
     enemy_laser.draw(screen)
     player.update()
     player.draw(screen)
+    pygame.draw.rect(screen,(200,0,0),(55,18,180*(player.sprite.health/100),20))
+    pygame.draw.rect(screen,(0,0,200),(55,63,180*(earth.sprite.health/250),20))
+    screen.blit(player_health_icon,(10,10))
+    screen.blit(earth_health_icon,(10,55))
     pygame.display.update()
     clock.tick(60)
