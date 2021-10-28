@@ -19,6 +19,7 @@ beam = pygame.image.load("image/laser.png").convert_alpha()
 flame = pygame.image.load("image/flame.png").convert_alpha()
 turbo = pygame.image.load("image/turbo.png").convert_alpha()
 enemy_beam = pygame.image.load("image/enemy_laser.png").convert_alpha()
+energy = pygame.transform.rotozoom(pygame.image.load("image/energy.png").convert_alpha(),0,0.55)
 mixer.music.load("audio/music.mp3")
 laser_sound = mixer.Sound("audio/laser.mp3")
 enemy_hit = mixer.Sound("audio/enemy_hit.mp3")
@@ -35,6 +36,7 @@ class Player(pygame.sprite.Sprite):
         self.image = spaceship
         self.rect = self.image.get_rect(center = (600,350))
         self.health = 100
+        self.energy = 100
         self.angle = 0
         self.dangle = 0
         self.dx = 0
@@ -225,6 +227,7 @@ while True:
                 move = True
                 reverse = True
             elif event.key == pygame.K_SPACE and laser.sprite.shot == False: 
+                player.sprite.energy = player.sprite.energy - 10
                 laser.sprite.shot = True
                 laser_sound.play()
                 laser.sprite.rect = laser.sprite.image.get_rect(
@@ -233,7 +236,7 @@ while True:
                 laser.sprite.angle = player.sprite.angle
                 laser.sprite.dx = 15*math.sin(math.radians(laser.sprite.angle))
                 laser.sprite.dy = -15*math.cos(math.radians(laser.sprite.angle))
-            elif event.key == pygame.K_LSHIFT : player_speed = 10
+            elif event.key == pygame.K_LSHIFT: player_speed = 10
         if event.type == pygame.KEYUP:
             if( event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT) : player.sprite.dangle = 0
             elif ( event.key == pygame.K_UP): 
@@ -276,7 +279,9 @@ while True:
         laser.draw(screen)
     if(move):
         if(player_speed == 4) : fire.sprite.turbo = False
-        else : fire.sprite.turbo = True
+        else: 
+            player.sprite.energy = player.sprite.energy - 0.2
+            fire.sprite.turbo = True
         fire.sprite.angle = player.sprite.angle
         fire.sprite.playerx = player.sprite.rect.centerx
         fire.sprite.playery = player.sprite.rect.centery
@@ -329,7 +334,10 @@ while True:
     player.draw(screen)
     pygame.draw.rect(screen,(200,0,0),(55,18,180*(player.sprite.health/100),20))
     pygame.draw.rect(screen,(0,0,200),(55,63,180*(earth.sprite.health/250),20))
+    pygame.draw.rect(screen,(200,200,0),(55,104,180*(player.sprite.energy/100),20))
     screen.blit(player_health_icon,(10,10))
     screen.blit(earth_health_icon,(10,55))
+    screen.blit(energy,(10,100))
+    if(player.sprite.energy < 100): player.sprite.energy = player.sprite.energy + 0.05
     pygame.display.update()
     clock.tick(60)
