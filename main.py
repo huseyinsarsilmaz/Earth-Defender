@@ -4,6 +4,20 @@ from sys import exit
 import random
 import math
 
+#Constants
+Player_rotation = 2
+Enemy_spawn_time = 180
+Laser_energy_use = 10
+Turbo_energy_use = 0.2
+Player_movement_speed = 5
+Enemy_player_collision_damage = 20
+Bomb_earth_damage = 25
+Bomb_player_damage = 10
+Enemy_laser_damage = 5
+Player_energy_recovery = 0.05
+Bomb_Movemement_steps = 600
+
+
 pygame.init()
 screen = pygame.display.set_mode((1200,700))
 background = pygame.image.load("image/background.png").convert_alpha()
@@ -37,6 +51,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center = (600,350))
         self.health = 100
         self.energy = 100
+        self.speed = Player_movement_speed
         self.angle = 0
         self.dangle = 0
         self.dx = 0
@@ -102,11 +117,11 @@ class Enemy(pygame.sprite.Sprite):
         self.dy = (200 + (500 - (abs(math.cos(math.radians((-70 + 10*index)))*500))))/self.steps
         self.index = index
         
-    def bomber(self): 
+    def bomb_launch(self): 
         bomb_drop.play()
         bomb.add(Bomb([self.pos[0],self.pos[1]]))
 
-    def laserer(self):
+    def laser_launch(self):
         laser_hit.play()
         enemy_laser.add(Enemy_laser([self.pos[0],self.pos[1]]))
         
@@ -114,7 +129,7 @@ class Enemy(pygame.sprite.Sprite):
         if( self.health < 3):
             if(self.laser_time == 150):
                 self.laser_time = 0
-                self.laserer()
+                self.laser_launch()
             mx = player.sprite.rect.centerx - self.pos[0]
             my = player.sprite.rect.centery  - self.pos[1]
             self.angle = math.atan2(mx,my)
@@ -129,7 +144,7 @@ class Enemy(pygame.sprite.Sprite):
             self.bomb_time = self.bomb_time +1
             if(self.bomb_time == 200):
                 self.bomb_time = 0
-                self.bomber()
+                self.bomb_launch()
             if(self.counter <= self.steps):
                 if(self.counter >= (self.steps/2)):
                     self.angle = self.angle + self.dangle
@@ -162,7 +177,7 @@ class Bomb(pygame.sprite.Sprite):
         super().__init__()
         self.pos = pos
         self.counter = 0
-        self.steps = 200
+        self.steps = Bomb_Movemement_steps
         self.dx = (600 - self.pos[0] )/self.steps
         self.dy = (700 - self.pos[1] )/self.steps
         self.angle = math.degrees(math.atan2(self.dx,self.dy))
@@ -195,19 +210,17 @@ class Enemy_laser(pygame.sprite.Sprite):
      
 player = pygame.sprite.GroupSingle()
 player.add(Player())
-player_speed = 4
 earth = pygame.sprite.GroupSingle()
 earth.add(Earth())
 laser = pygame.sprite.GroupSingle()
 laser.add(Laser())
 enemy = pygame.sprite.Group()
-enemy_timer = pygame.USEREVENT + 1
+enemy_spawn = 0
 enemy_list = []
 for i in range(15) : enemy_list.append(False)
 fire = pygame.sprite.GroupSingle()
 fire.add(Fire())
 maximum = False
-pygame.time.set_timer(enemy_timer,3000)
 move = False
 reverse = False
 bomb = pygame.sprite.Group()
@@ -227,14 +240,14 @@ while True:
                 pygame.quit()
                 exit()
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT : player.sprite.dangle = -2
-                elif event.key == pygame.K_RIGHT : player.sprite.dangle = 2
+                if event.key == pygame.K_LEFT : player.sprite.dangle = -Player_rotation 
+                elif event.key == pygame.K_RIGHT : player.sprite.dangle = Player_rotation 
                 elif event.key == pygame.K_UP : move = True 
                 elif event.key == pygame.K_DOWN:
                     move = True
                     reverse = True
                 elif event.key == pygame.K_SPACE and laser.sprite.shot == False: 
-                    player.sprite.energy = player.sprite.energy - 10
+                    player.sprite.energy = player.sprite.energy - Laser_energy_use
                     laser.sprite.shot = True
                     laser_sound.play()
                     laser.sprite.rect = laser.sprite.image.get_rect(
@@ -243,7 +256,7 @@ while True:
                     laser.sprite.angle = player.sprite.angle
                     laser.sprite.dx = 15*math.sin(math.radians(laser.sprite.angle))
                     laser.sprite.dy = -15*math.cos(math.radians(laser.sprite.angle))
-                elif event.key == pygame.K_LSHIFT: player_speed = 10
+                elif event.key == pygame.K_LSHIFT: player.sprite.speed = Player_movement_speed*2
             if event.type == pygame.KEYUP:
                 if( event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT) : player.sprite.dangle = 0
                 elif ( event.key == pygame.K_UP): 
@@ -257,26 +270,11 @@ while True:
                     player.sprite.dangle = 0
                     player.sprite.dx = 0
                     player.sprite.dy = 0
-                elif event.key == pygame.K_LSHIFT : player_speed = 4
-            if event.type == enemy_timer:
-                for i in range(len(enemy_list)):
-                    if enemy_list[i] == False:
-                        maximum = False
-                        break
-                    elif( i == len(enemy_list)-1): maximum = True
-                if( maximum == False):
-                    while True:
-                        index = random.randint(0,14)
-                        if( enemy_list[index] == False):
-                            newEnemy = Enemy(index)
-                            pygame.time.set_timer
-                            enemy.add(newEnemy)
-                            enemy_list[index] = True
-                            break  
+                elif event.key == pygame.K_LSHIFT : player.sprite.speed = Player_movement_speed
         screen.blit(background,(0,0))
         if(move):
-            player.sprite.dx = player_speed*math.sin(math.radians(player.sprite.angle))
-            player.sprite.dy = -player_speed*math.cos(math.radians(player.sprite.angle))
+            player.sprite.dx = player.sprite.speed*math.sin(math.radians(player.sprite.angle))
+            player.sprite.dy = -player.sprite.speed*math.cos(math.radians(player.sprite.angle))
             if(reverse):
                 player.sprite.dx = -player.sprite.dx
                 player.sprite.dy = -player.sprite.dy
@@ -284,9 +282,9 @@ while True:
             laser.update()
             laser.draw(screen)
         if(move):
-            if(player_speed == 4) : fire.sprite.turbo = False
+            if(player.sprite.speed == 5) : fire.sprite.turbo = False
             else: 
-                player.sprite.energy = player.sprite.energy - 0.2
+                player.sprite.energy = player.sprite.energy - Turbo_energy_use
                 fire.sprite.turbo = True
             fire.sprite.angle = player.sprite.angle
             fire.sprite.playerx = player.sprite.rect.centerx
@@ -305,7 +303,7 @@ while True:
                     enemy_list[i.index] = False
                     i.kill()
             if( pygame.sprite.collide_mask(player.sprite,i) != None):
-                player.sprite.health = player.sprite.health - 20
+                player.sprite.health = player.sprite.health - Enemy_player_collision_damage
                 enemy_hit.play()
                 enemy_list[i.index] = False
                 i.kill()
@@ -313,12 +311,12 @@ while True:
             earth.sprite.image = earth_shield_control
             if( pygame.sprite.collide_mask(earth.sprite,i) != None):
                 shield_counter = 1
-                earth.sprite.health = earth.sprite.health - 25
+                earth.sprite.health = earth.sprite.health - Bomb_earth_damage
                 i.kill()
             elif(shield_counter == 0):
                 earth.sprite.image = planet
             if ( pygame.sprite.collide_mask(player.sprite,i) != None):
-                player.sprite.health = player.sprite.health - 10
+                player.sprite.health = player.sprite.health - Bomb_player_damage
                 i.kill()
             if ( pygame.sprite.collide_mask(laser.sprite,i) != None):
                 i.kill()
@@ -329,11 +327,27 @@ while True:
         if(earth.sprite.image == earth_shield_control) : earth.sprite.image = earth_shield
         for i in enemy_laser.sprites():
             if( pygame.sprite.collide_mask(player.sprite,i) != None):
-                player.sprite.health = player.sprite.health - 2.5
+                player.sprite.health = player.sprite.health - Enemy_laser_damage
                 i.kill()
         earth.draw(screen)
         bomb.update()
         bomb.draw(screen)
+        enemy_spawn += 1
+        if(enemy_spawn == Enemy_spawn_time):
+            for i in range(len(enemy_list)):
+                    if enemy_list[i] == False:
+                        maximum = False
+                        break
+                    elif( i == len(enemy_list)-1): maximum = True
+            if( maximum == False):
+                while True:
+                    index = random.randint(0,14)
+                    if( enemy_list[index] == False):
+                        newEnemy = Enemy(index)
+                        enemy.add(newEnemy)
+                        enemy_list[index] = True
+                        break
+            enemy_spawn = 0  
         enemy_laser.update()
         enemy_laser.draw(screen)
         player.update()
@@ -344,7 +358,7 @@ while True:
         screen.blit(player_health_icon,(10,10))
         screen.blit(earth_health_icon,(10,55))
         screen.blit(energy,(10,100))
-        if(player.sprite.energy < 100): player.sprite.energy = player.sprite.energy + 0.05
+        if(player.sprite.energy < 100): player.sprite.energy = player.sprite.energy + Player_energy_recovery
     else:
         for event in pygame.event.get(): 
             if event.type == pygame.QUIT:
